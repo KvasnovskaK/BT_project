@@ -23,6 +23,10 @@ use Illuminate\Support\Facades\Route;
 //Route::resource('books', BookRestController::class);
 //Route::apiResource('books', BookApiController::class);
 
+use App\Http\Controllers\CategoryController;
+
+Route::apiResource('categories', CategoryController::class);
+Route::get('categories/name/{name}', [CategoryController::class, 'getByName']);
 
 Route::apiResource('/notes', NoteController::class);
 
