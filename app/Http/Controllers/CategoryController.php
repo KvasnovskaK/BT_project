@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class CategoryController extends Controller
 {
@@ -18,14 +19,37 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+
+
+     public function store(Request $request)
+     {
+        if (Category::where('name', $request->name)->exists()) {
+            return response()->json([
+                'message' => 'Kategória s týmto menom už existuje'
+            ], Response::HTTP_CONFLICT); // 409 Conflict
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+         $category = Category::create(['name' => $validated['name']]);
+ 
+         return response()->json([
+             'message' => 'Kategória bola úspešne vytvorená',
+             'category' => $category
+         ], Response::HTTP_CREATED);
+     }
+
+
+    /*public function store(Request $request)
     {
         $request->validate(['name' => 'required|unique:categories']);
 
         $category = Category::create(['name' => $request->name]);
 
         return response()->json($category, 201);
-    }
+    }*/
 
     /**
      * Display the specified resource.
@@ -38,7 +62,32 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+
+     public function update(Request $request, string $id)
+     {
+         try {
+        $category = Category::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+        ]);
+
+        $category->update(['name' => $validated['name']]);
+
+        return response()->json([
+            'message' => 'Kategória bola úspešne aktualizovaná',
+            'category' => $category
+        ], Response::HTTP_OK);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Chyba pri aktualizácii kategórie',
+            'errors' => $e->getMessage()
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+    }
+
+    /*public function update(Request $request, string $id)
     {
         $category = Category::findOrFail($id);
         $request->validate(['name' => 'required|unique:categories']);
@@ -46,7 +95,7 @@ class CategoryController extends Controller
         $category->update(['name' => $request->name]);
 
         return response()->json($category);
-    }
+    }*/
 
     /**
      * Remove the specified resource from storage.

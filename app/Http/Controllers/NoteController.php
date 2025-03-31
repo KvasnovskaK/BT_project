@@ -85,21 +85,12 @@ class NoteController extends Controller
                 return response()->json(['message' => 'Poznámka nebola nájdená'], Response::HTTP_NOT_FOUND);
             }
 
-            $note->update([
-                'title' => $validated['title'],
-                'body' => $validated['body'],
-            ]);
+            $note->update($validated);
 
-            // Handle categories update
-            $categoryIds = [];
-            if (!empty($validated['categories'])) {
-                foreach ($validated['categories'] as $categoryName) {
-                    $category = Category::firstOrCreate(['name' => $categoryName]);
-                    $categoryIds[] = $category->id;
-                }
+            if (isset($validated['categories'])) {
+                $note->categories()->sync($validated['categories']);
             }
 
-            $note->categories()->sync($categoryIds);
             $note->load(['user', 'categories']);
 
             return response()->json([
@@ -224,29 +215,16 @@ class NoteController extends Controller
                 'categories.*' => 'exists:categories,id',
             ]);
 
-            $categoryIds = [];
-            if (!empty($validated['categories'])) {
-                foreach ($validated['categories'] as $categoryName) {
-                    $category = Category::firstOrCreate(['name' => $categoryName]);
-                    $categoryIds[] = $category->id;
-                }
-            }
-
-
             $note = Note::create([
                 'user_id' => $validated['user_id'],
                 'title' => $validated['title'],
                 'body' => $validated['body']
             ]);
 
+            if (!empty($validated['categories'])) {
+                $note->categories()->sync($validated['categories']);
+            }
 
-            $note = Note::create([
-                'user_id' => $validated['user_id'],
-                'title' => $validated['title'],
-                'body' => $validated['body'],
-            ]);
-
-            $note->categories()->sync($categoryIds);
             $note->load(['user', 'categories']);
 
             return response()->json([
